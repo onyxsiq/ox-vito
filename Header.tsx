@@ -38,7 +38,10 @@ export default function Header({ onLogoClick }: HeaderProps) {
       return;
     }
 
-    const orderItems = cart.map(item => `${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`).join('\n');
+    const orderItems = cart.map(item => {
+      const colorInfo = item.selectedColor ? ` [Color: ${item.selectedColor}]` : '';
+      return `${item.name}${colorInfo} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`;
+    }).join('\n');
     const totalPrice = getTotalPrice().toFixed(2);
     
     const message = `*New Order*\n\nCustomer: ${checkoutForm.name}\nPhone: ${checkoutForm.phone}\nAddress: ${checkoutForm.address}\n\n*Items:*\n${orderItems}\n\n*Total: $${totalPrice}*`;
@@ -112,10 +115,15 @@ export default function Header({ onLogoClick }: HeaderProps) {
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h3>
                     <div className="space-y-4">
                       {cart.map(item => (
-                        <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                        <div key={`${item.id}-${item.selectedColor}`} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{item.name}</p>
-                            <p className="text-sm text-gray-600">${item.price} each</p>
+                            {item.selectedColor && (
+                              <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+                                Color: {item.selectedColor}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-600 mt-1">${item.price} each</p>
                           </div>
                           <div className="flex items-center gap-3">
                             <button
