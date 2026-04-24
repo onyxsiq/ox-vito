@@ -38,7 +38,10 @@ export default function Header({ onLogoClick }: HeaderProps) {
       return;
     }
 
-    const orderItems = cart.map(item => `${item.name} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`).join('\n');
+    const orderItems = cart.map(item => {
+      const colorInfo = item.selectedColor ? ` [Color: ${item.selectedColor}]` : '';
+      return `${item.name}${colorInfo} x${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`;
+    }).join('\n');
     const totalPrice = getTotalPrice().toFixed(2);
     
     const message = `*New Order*\n\nCustomer: ${checkoutForm.name}\nPhone: ${checkoutForm.phone}\nAddress: ${checkoutForm.address}\n\n*Items:*\n${orderItems}\n\n*Total: $${totalPrice}*`;
@@ -53,34 +56,34 @@ export default function Header({ onLogoClick }: HeaderProps) {
 
   return (
     <>
-      <header className="bg-white shadow-lg border-b border-gray-100 sticky top-0 z-40">
+      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-between items-center py-5">
             {onLogoClick ? (
               <button 
                 onClick={onLogoClick}
-                className="text-3xl font-bold font-serif text-gray-900 tracking-tight hover:text-gray-600 transition-colors"
+                className="text-3xl font-bold font-serif text-gray-900 tracking-tighter hover:opacity-70 transition-all duration-300"
               >
-                OX Vito
+                OX VITO
               </button>
             ) : (
               <Link 
                 href="/"
-                className="text-3xl font-bold font-serif text-gray-900 tracking-tight hover:text-gray-600 transition-colors"
+                className="text-3xl font-bold font-serif text-gray-900 tracking-tighter hover:opacity-70 transition-all duration-300"
               >
-                OX Vito
+                OX VITO
               </Link>
             )}
             <button 
               onClick={() => setShowCheckout(true)}
-              className="relative flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+              className="group relative flex items-center gap-3 px-5 py-2.5 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-all duration-300 shadow-lg hover:shadow-gray-200"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              <svg className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
-              Cart
+              <span className="font-medium text-sm tracking-wide">BAG</span>
               {cart.length > 0 && (
-                <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold transform -translate-y-1/4 translate-x-1/4">
+                <span className="absolute -top-1 -right-1 bg-white text-gray-900 border border-gray-900 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md">
                   {cart.length}
                 </span>
               )}
@@ -112,10 +115,15 @@ export default function Header({ onLogoClick }: HeaderProps) {
                     <h3 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h3>
                     <div className="space-y-4">
                       {cart.map(item => (
-                        <div key={item.id} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+                        <div key={`${item.id}-${item.selectedColor}`} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{item.name}</p>
-                            <p className="text-sm text-gray-600">${item.price} each</p>
+                            {item.selectedColor && (
+                              <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+                                Color: {item.selectedColor}
+                              </p>
+                            )}
+                            <p className="text-sm text-gray-600 mt-1">${item.price} each</p>
                           </div>
                           <div className="flex items-center gap-3">
                             <button

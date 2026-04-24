@@ -13,6 +13,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [added, setAdded] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,18 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         });
         if (!response.ok) throw new Error('Product not found');
         const record = await response.json();
+        
+        // Handle colors (could be comma separated string or array)
+        const colorsRaw = record.fields.Colors;
+        const colors = Array.isArray(colorsRaw) 
+          ? colorsRaw 
+          : (typeof colorsRaw === 'string' ? colorsRaw.split(',').map(s => s.trim()) : []);
+
+        // Handle variant images
+        const variantImages = Array.isArray(record.fields.VariantImages)
+          ? record.fields.VariantImages.map((img: any) => img.url)
+          : [];
+
         setProduct({
           id: record.id,
           name: record.fields.Name,
@@ -33,6 +46,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               ? record.fields.Image[0].url
               : `https://placehold.co/800x900?text=${record.fields.Name || 'Product'}`,
           category: record.fields.Category || 'General',
+          colors: colors,
+          variantImages: variantImages
         });
       } catch (error) {
         console.error('Error fetching product:', error);
@@ -45,7 +60,11 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product);
+    const itemToAdd = {
+      ...product,
+      selectedColor: product.colors?.[selectedColorIndex]
+    };
+    addToCart(itemToAdd);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -73,31 +92,34 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
     );
   }
 
+  const currentImage = product.variantImages?.[selectedColorIndex] || product.image;
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-          <Link href="/" className="hover:text-gray-900 transition-colors">Home</Link>
-          <span>/</span>
-          <span className="text-gray-400">{product.category}</span>
-          <span>/</span>
-          <span className="text-gray-900 font-medium">{product.name}</span>
+          <Link href="/" className="hover:text-gray-900 transition-colors uppercase tracking-widest text-[10px] font-bold">Home</Link>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-400 uppercase tracking-widest text-[10px] font-bold">{product.category}</span>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-900 font-bold uppercase tracking-widest text-[10px]">{product.name}</span>
         </nav>
 
         {/* Product Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
           {/* Product Image */}
-          <div className="relative rounded-3xl overflow-hidden aspect-[4/5] shadow-2xl">
+          <div className="relative rounded-2xl overflow-hidden aspect-[4/5] shadow-2xl bg-gray-100">
             <img
-              src={product.image}
+              key={currentImage}
+              src={currentImage}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover animate-fade-in"
             />
             <div className="absolute top-4 left-4">
-              <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow">
+              <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full shadow-sm">
                 {product.category}
               </span>
             </div>
@@ -105,44 +127,58 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
 
           {/* Product Info */}
           <div className="flex flex-col justify-center py-8 lg:py-0 lg:sticky lg:top-32">
-            <h1 className="text-5xl font-serif font-bold text-gray-900 leading-tight mb-4">
+            <h1 className="text-5xl font-serif font-bold text-gray-900 leading-tight mb-4 tracking-tighter">
               {product.name}
             </h1>
 
-            <p className="text-4xl font-serif text-gray-800 mb-8">
+            <p className="text-4xl font-serif text-gray-800 mb-8 font-light">
               ${product.price}
             </p>
 
-            <div className="w-16 h-px bg-gray-300 mb-8"></div>
+            <div className="w-16 h-px bg-gray-200 mb-8"></div>
 
-            <p className="text-gray-600 leading-relaxed text-lg mb-10">
-              {product.description || 'A premium quality piece from the OX Vito collection, designed for style and comfort.'}
+            <p className="text-gray-500 leading-relaxed text-lg mb-10 font-light">
+              {product.description || 'A premium quality piece from the OX VITO collection, designed for style and comfort.'}
             </p>
+
+            {/* Color Selection */}
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-10">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 mb-4">
+                  Select Color: <span className="text-gray-900">{product.colors[selectedColorIndex]}</span>
+                </h3>
+                <div className="flex gap-3">
+                  {product.colors.map((color, idx) => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColorIndex(idx)}
+                      className={`w-10 h-10 rounded-full border-2 transition-all duration-300 relative ${
+                        selectedColorIndex === idx 
+                          ? 'border-gray-900 scale-110 shadow-lg' 
+                          : 'border-transparent hover:border-gray-200'
+                      }`}
+                      title={color}
+                    >
+                      <span 
+                        className="absolute inset-1 rounded-full border border-black/10 shadow-inner"
+                        style={{ backgroundColor: color.toLowerCase() }}
+                      ></span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              className={`w-full py-5 px-8 rounded-2xl text-lg font-semibold transition-all duration-300 flex items-center justify-center gap-3 ${
+              className={`w-full py-5 px-8 rounded-full text-sm font-bold tracking-[0.2em] uppercase transition-all duration-300 flex items-center justify-center gap-3 ${
                 added
-                  ? 'bg-green-600 text-white scale-95'
-                  : 'bg-gray-900 text-white hover:bg-gray-700 hover:scale-[1.02] active:scale-95'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-900 text-white hover:bg-black hover:shadow-2xl active:scale-95'
               }`}
             >
-              {added ? (
-                <>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Added to Cart!
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Add to Cart
-                </>
-              )}
+              {added ? 'Added to Bag' : 'Add to Bag'}
             </button>
 
             <Link

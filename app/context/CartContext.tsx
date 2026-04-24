@@ -9,10 +9,13 @@ export interface Product {
   description: string;
   image: string;
   category: string;
+  colors?: string[];
+  variantImages?: string[];
 }
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedColor?: string;
 }
 
 interface CartContextType {

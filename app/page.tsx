@@ -12,6 +12,8 @@ export default function Home() {
   const [categories, setCategories] = useState<string[]>(['All']);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high'>('default');
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -90,20 +92,67 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const filteredProducts = selectedCategory === 'All' 
-    ? products 
-    : selectedCategory ? products.filter(product => product.category === selectedCategory) : [];
+  const filteredAndSortedProducts = (() => {
+    let result = selectedCategory === 'All' || !selectedCategory
+      ? products 
+      : products.filter(product => product.category === selectedCategory);
+
+    if (searchQuery) {
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (sortBy === 'price-low') {
+      result = [...result].sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      result = [...result].sort((a, b) => b.price - a.price);
+    }
+
+    return result;
+  })();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
       <Header onLogoClick={() => setSelectedCategory(null)} />
       <main className="pb-12 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
-          <div className="text-center">
-            <h2 className="text-4xl font-extrabold font-serif text-gray-900 mb-4">Discover Our Collection</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <div className="text-center animate-fade-in-down">
+            <h2 className="text-5xl font-extrabold font-serif text-gray-900 mb-6 tracking-tight">
+              Discover Our Collection
+            </h2>
+            <p className="text-xl text-gray-500 max-w-2xl mx-auto font-light">
               Explore our curated selection of high-quality clothing designed for style and comfort.
             </p>
+          </div>
+
+          {/* Search and Sort Bar */}
+          <div className="mt-12 flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100 animate-fade-in">
+            <div className="relative w-full md:max-w-md">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-gray-900 transition-all"
+              />
+              <svg className="w-6 h-6 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            <div className="flex gap-4 w-full md:w-auto">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="flex-1 md:flex-none px-4 py-3 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-gray-900 transition-all text-gray-700"
+              >
+                <option value="default">Sort by: Default</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -167,11 +216,12 @@ export default function Home() {
                   {selectedCategory === 'All' ? 'All Products' : selectedCategory}
                 </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredProducts.map((product) => (
+            {filteredAndSortedProducts.map((product, index) => (
               <div 
                 key={product.id} 
                 onClick={() => router.push(`/product/${product.id}`)}
-                className="group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[400px]"
+                style={{ animationDelay: `${index * 50}ms` }}
+                className="group relative cursor-pointer rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-[400px] animate-fade-in-up"
               >
                 <img
                   src={product.image}
@@ -212,9 +262,15 @@ export default function Home() {
             ))}
           </div>
 
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-20">
-                <p className="text-gray-500 text-lg">No products found in this category.</p>
+            {filteredAndSortedProducts.length === 0 && (
+              <div className="text-center py-20 animate-fade-in">
+                <p className="text-gray-400 text-lg">No products found matching your criteria.</p>
+                <button 
+                  onClick={() => { setSearchQuery(''); setSelectedCategory(null); }}
+                  className="mt-4 text-gray-900 underline font-medium"
+                >
+                  Clear all filters
+                </button>
               </div>
             )}
               </div>
